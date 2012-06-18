@@ -18,6 +18,8 @@ isEnabledForUrl = true
 currentCompletionKeys = null
 validFirstKeys = null
 activatedElement = null
+setMarkMode = false
+gotoMarkMode = false
 
 # The types in <input type="..."> that we consider for focusInput command. Right now this is recalculated in
 # each content script. Alternatively we could calculate it once in the background page and use a request to
@@ -182,7 +184,9 @@ registerFrameIfSizeAvailable = (is_top) ->
 # Enters insert mode if the currently focused element in the DOM is focusable.
 #
 enterInsertModeIfElementIsFocused = ->
-  if (document.activeElement && isEditable(document.activeElement) && !findMode)
+  inSpecialMode = findMode or setMarkMode or gotoMarkMode
+
+  if (document.activeElement && isEditable(document.activeElement) && !inSpecialMode)
     enterInsertModeWithoutShowingIndicator(document.activeElement)
 
 onDOMActivate = (event) -> activatedElement = event.target
@@ -380,6 +384,12 @@ onKeypress = (event) ->
       if (findMode)
         handleKeyCharForFindMode(keyChar)
         suppressEvent(event)
+      else if setMarkMode
+        handleKeyCharForSetMarkMode keyChar
+        suppressEvent event
+      else if gotoMarkMode
+        handleKeyCharForGotoMarkMode keyChar
+        suppressEvent event
       else if (!isInsertMode() && !findMode)
         if (currentCompletionKeys.indexOf(keyChar) != -1)
           suppressEvent(event)
@@ -456,6 +466,20 @@ onKeydown = (event) ->
       suppressEvent(event)
 
     else if (!modifiers)
+      event.stopPropagation()
+
+  else if setMarkMode
+    if KeyboardUtils.isEscape event
+      handleEscapeForSetMarkMode()
+      suppressEvent event
+    else if !modifiers
+      event.stopPropagation()
+
+  else if gotoMarkMode
+    if KeyboardUtils.isEscape event
+      handleEscapeForGotoMarkMode()
+      suppressEvent event
+    else if !modifiers
       event.stopPropagation()
 
   else if (isShowingHelpDialog && KeyboardUtils.isEscape(event))
@@ -638,6 +662,22 @@ handleEnterForFindMode = ->
   focusFoundLink()
   document.body.classList.add("vimiumFindMode")
   settings.set("findModeRawQuery", findModeQuery.rawQuery)
+
+handleKeyCharForSetMarkMode = (keyChar) ->
+  if /[a-zA-Z]/.test keyChar
+    chrome.extension.sendRequest handler: 'setMarkForTab', mark: keyChar
+
+  exitSetMarkMode()
+
+handleEscapeForSetMarkMode = -> exitSetMarkMode()
+
+handleKeyCharForGotoMarkMode = (keyChar) ->
+  if /[a-zA-Z]/.test keyChar keyChar
+    chrome.extension.sendRequest handler: 'gotoTabForMark', mark: keyChar
+
+   exitGotoMarkMode()
+
+handleEscapeForGotoMarkMode = -> exitGotoMarkMode()
 
 performFindInPlace = ->
   cachedScrollX = window.scrollX
@@ -870,6 +910,22 @@ window.enterFindMode = ->
 
 exitFindMode = ->
   findMode = false
+  HUD.hide()
+
+window.enterSetMarkMode = ->
+  setMarkMode = true
+  HUD.show "m"
+
+exitSetMarkMode = ->
+  setMarkMode = false
+  HUD.hide()
+
+window.enterGotoMarkMode = ->
+  gotoMarkMode = true
+  HUD.show "`"
+
+exitGotoMarkMode = ->
+  gotoMarkMode = false
   HUD.hide()
 
 window.showHelpDialog = (html, fid) ->

@@ -95,6 +95,7 @@ Commands =
        "Vomnibar.activateBookmarks", "Vomnibar.activateBookmarksInNewTab",
        "goPrevious", "goNext", "nextFrame"]
     findCommands: ["enterFindMode", "performFind", "performBackwardsFind"]
+    markCommands: ["enterSetMarkMode", "enterGotoMarkMode"]
     historyNavigation:
       ["goBack", "goForward"]
     tabManipulation:
@@ -139,6 +140,9 @@ defaultKeyMappings =
   "f":     "LinkHints.activateMode"
   "F":     "LinkHints.activateModeToOpenInNewTab"
   "<a-f>": "LinkHints.activateModeWithQueue"
+
+  "m": "enterSetMarkMode"
+  "`": "enterGotoMarkMode"
 
   "/": "enterFindMode"
   "n": "performFind"
@@ -212,6 +216,9 @@ commandDescriptions =
   enterFindMode: ["Enter find mode"]
   performFind: ["Cycle forward to the next find match"]
   performBackwardsFind: ["Cycle backward to the previous find match"]
+
+  enterSetMarkMode: ["Enter set mark mode"]
+  enterGotoMarkMode: ["Enter go to mark mode"]
 
   goPrevious: ["Follow the link labeled previous or <"]
   goNext: ["Follow the link labeled next or >"]
