@@ -10,6 +10,9 @@ singleKeyCommands = []
 focusedFrame = null
 framesForTab = {}
 
+# State for tab marks
+tabIdForMarks = {}
+
 # Keys are either literal characters, or "named" - for example <a-b> (alt+b), <left> (left arrow) or <f12>
 # This regular expression captures two groups: the first is a named key, the second is the remainder of
 # the string.
@@ -180,6 +183,19 @@ copyToClipboard = (request) -> Clipboard.copy(request.data)
 #
 selectSpecificTab = (request) -> chrome.tabs.update(request.id, { selected: true })
 
+setMarkForTab = (request) ->
+  chrome.tabs.getSelected null, (tab) -> tabIdForMarks[request.mark] = tab.id
+
+gotoTabForMark = (request) ->
+  return unless request.mark of tabIdForMarks
+  tabId = tabIdForMarks[request.mark]
+  chrome.tabs.update tabId, selected: true
+
+clearMarksForTabId = (tabId) ->
+  # Clear any marks that point to tabId
+  for mark, t of tabIdForMarks
+    delete tabIdForMarks[mark] if t == tabId
+
 #
 # Used by the content scripts to get settings from the local storage.
 #
@@ -333,6 +349,8 @@ chrome.tabs.onMoved.addListener((tabId, moveInfo) ->
 chrome.tabs.onRemoved.addListener((tabId) ->
   openTabInfo = openTabs[tabId]
   updatePositionsAndWindowsForAllTabsInWindow(openTabInfo.windowId)
+
+  clearMarksForTabId tabId
 
   # If we restore chrome:# pages, they'll ignore Vimium keystrokes when they reappear.
   # Pretend they never existed and adjust tab indices accordingly.
@@ -550,7 +568,9 @@ sendRequestHandlers =
   isEnabledForUrl: isEnabledForUrl,
   saveHelpDialogSettings: saveHelpDialogSettings,
   selectSpecificTab: selectSpecificTab,
-  refreshCompleter: refreshCompleter
+  refreshCompleter: refreshCompleter,
+  setMarkForTab: setMarkForTab,
+  gotoTabForMark: gotoTabForMark
 
 # Convenience function for development use.
 window.runTests = -> open(chrome.extension.getURL('test_harnesses/automated/automated.html'))
