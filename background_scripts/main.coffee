@@ -12,6 +12,7 @@ framesForTab = {}
 
 # State for tab marks
 tabIdForMarks = {}
+currTabId = -1
 
 # Keys are either literal characters, or "named" - for example <a-b> (alt+b), <left> (left arrow) or <f12>
 # This regular expression captures two groups: the first is a named key, the second is the remainder of
@@ -334,6 +335,8 @@ updateScrollPosition = (tab, scrollX, scrollY) ->
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) ->
   return unless changeInfo.status == "loading" # only do this once per URL change
+  tabIdForMarks['`'] = currTabId
+  currTabId = tabId
   updateOpenTabs(tab)
   updateActiveState(tabId))
 

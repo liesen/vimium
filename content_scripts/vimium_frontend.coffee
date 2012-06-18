@@ -672,7 +672,7 @@ handleKeyCharForSetMarkMode = (keyChar) ->
 handleEscapeForSetMarkMode = -> exitSetMarkMode()
 
 handleKeyCharForGotoMarkMode = (keyChar) ->
-  if /[a-zA-Z]/.test keyChar keyChar
+  if keyChar == "`" or /[a-zA-Z]/.test keyChar
     chrome.extension.sendRequest handler: 'gotoTabForMark', mark: keyChar
 
    exitGotoMarkMode()
